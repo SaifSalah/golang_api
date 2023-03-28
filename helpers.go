@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type ApiError struct {
@@ -28,4 +32,14 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 			})
 		}
 	}
+}
+
+func getID(request *http.Request) (int, error) {
+	idParam := mux.Vars(request)["id"]
+	id, err := strconv.Atoi(idParam) //cast id value from string to int
+	if err != nil {
+		return id, fmt.Errorf("Invalid id type given %s", idParam)
+	}
+
+	return id, nil
 }
