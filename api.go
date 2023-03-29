@@ -25,8 +25,9 @@ func newAPIServer(listenAddr string, storage IStorage) *APIServer {
 func (s *APIServer) Run() {
 
 	router := mux.NewRouter()
-	router.HandleFunc("/all", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID))
+	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
+	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleGetAccountByID)))
+	router.HandleFunc("/transfer", withJWTAuth(makeHTTPHandleFunc(s.handleTransfer)))
 	log.Println("JSON API Server running on port: ", s.ListenAddr)
 	http.ListenAndServe(s.ListenAddr, router)
 
@@ -95,6 +96,12 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
+	token, err := CreateToken(account)
+	if err != nil {
+		return err
+	}
+	fmt.Println(token)
+
 	return writeJSON(w, http.StatusOK, account)
 }
 
@@ -114,5 +121,11 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 
 func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
 
-	return nil
+	transferDTO := new(TransferAccountRequestDto)
+
+	if err := json.NewDecoder(r.Body).Decode(transferDTO); err != nil {
+		return err
+	}
+	fmt.Println(transferDTO)
+	return writeJSON(w, http.StatusOK, transferDTO)
 }

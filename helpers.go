@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
 
 type ApiError struct {
 	Error string
 }
+
+const jwtSecret = "Super_Secret_WOW"
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
@@ -42,4 +45,46 @@ func getID(request *http.Request) (int, error) {
 	}
 
 	return id, nil
+}
+
+func withJWTAuth(handlerFunc http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		tokenAsString := r.Header.Get("x-jwt-token")
+		_, err := JwtValidation(tokenAsString)
+		if err != nil {
+			writeJSON(w, http.StatusForbidden, ApiError{
+				Error: "Invalid token",
+			})
+			return
+		}
+
+		handlerFunc(w, r)
+	}
+
+}
+
+func JwtValidation(tokenString string) (*jwt.Token, error) {
+
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(jwtSecret), nil
+	})
+
+}
+
+func CreateToken(account *Account) (string, error) {
+
+	claims := &jwt.MapClaims{
+		"ExpiresAt":      15000,
+		"account_number": account.Number,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtSecret))
+
 }
