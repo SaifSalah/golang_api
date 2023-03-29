@@ -47,15 +47,48 @@ func getID(request *http.Request) (int, error) {
 	return id, nil
 }
 
-func withJWTAuth(handlerFunc http.HandlerFunc) http.HandlerFunc {
+func withJWTAuth(handlerFunc http.HandlerFunc, storage IStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		tokenAsString := r.Header.Get("x-jwt-token")
-		_, err := JwtValidation(tokenAsString)
+		token, err := JwtValidation(tokenAsString)
 		if err != nil {
 			writeJSON(w, http.StatusForbidden, ApiError{
 				Error: "Invalid token",
 			})
+			return
+		}
+
+		if !token.Valid {
+			writeJSON(w, http.StatusForbidden, ApiError{
+				Error: "Invalid token",
+			})
+			return
+		}
+
+		userId, err := getID(r)
+		if err != nil {
+			writeJSON(w, http.StatusForbidden, ApiError{
+				Error: "access denined",
+			})
+			return
+		}
+		account, err := storage.GetAccountByID(userId)
+		if err != nil {
+			writeJSON(w, http.StatusForbidden, ApiError{
+				Error: "access denined",
+			})
+			return
+		}
+
+		claims := token.Claims.(jwt.MapClaims)
+
+		if account.Number != int64(claims["account_number"].(float64)) {
+			writeJSON(w, http.StatusForbidden, ApiError{
+				Error: "access denined",
+			})
+			fmt.Println(account)
+			fmt.Println(claims)
 			return
 		}
 

@@ -26,8 +26,8 @@ func (s *APIServer) Run() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleGetAccountByID)))
-	router.HandleFunc("/transfer", withJWTAuth(makeHTTPHandleFunc(s.handleTransfer)))
+	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleGetAccountByID), s.IStorage))
+	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
 	log.Println("JSON API Server running on port: ", s.ListenAddr)
 	http.ListenAndServe(s.ListenAddr, router)
 
