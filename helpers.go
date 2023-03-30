@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ApiError struct {
@@ -120,4 +122,22 @@ func CreateToken(account *Account) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtSecret))
 
+}
+
+func tableScan(rows *sql.Rows) (*Account, error) {
+	account := new(Account)
+	err := rows.Scan(
+		&account.ID,
+		&account.FirstName,
+		&account.LastName,
+		&account.Number,
+		&account.Password,
+		&account.Balance,
+		&account.CreatedAt)
+
+	return account, err
+}
+
+func (account *Account) PasswordCorrect(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password)) == nil
 }
