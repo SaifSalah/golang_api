@@ -38,5 +38,6 @@ func main() {
 )
 ```
 
-#Check other files to understand how code flow works, it's very simple 
-this is a new line xD
+
+### Check other files to understand how code flow works, it's very simple 
+> - this a new line \n 👻.
